@@ -53,7 +53,7 @@ public class Main {
     private static class TestContext implements RunOnce.Context {
 
         // 用于通知上下文的结束事件，即onDestroy发生
-        private RunOnce.Binder mBinder = new RunOnce.Binder();
+        private RunOnce.Binder mBinder = new RunOnce.DefaultBinder();
 
         private boolean mIsDestroy;
 
