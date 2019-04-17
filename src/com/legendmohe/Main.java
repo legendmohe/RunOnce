@@ -63,7 +63,7 @@ public class Main {
         }
 
         @Override
-        public boolean isDestroy() {
+        public boolean isRunOnceContextDestroy() {
             return mIsDestroy;
         }
 

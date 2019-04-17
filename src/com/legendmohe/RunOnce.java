@@ -23,7 +23,7 @@ public class RunOnce {
             throw new NullPointerException("context cannot be null");
         }
         // 如果已经Destroy了，就不绑定，直接返回空实现
-        if (context.isDestroy()) {
+        if (context.isRunOnceContextDestroy()) {
             return EMPTY_RUN_ONCE;
         }
         RunOnce runOnce = gContextMap.get(context);
@@ -156,6 +156,6 @@ public class RunOnce {
          *
          * @return
          */
-        boolean isDestroy();
+        boolean isRunOnceContextDestroy();
     }
 }
