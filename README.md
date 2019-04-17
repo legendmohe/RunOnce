@@ -17,6 +17,12 @@ public class Main {
         runOnce("abc", context);
         runOnce("abc", context);
 
+        // 重新开始
+        context.reset();
+        System.out.println("====reset context====");
+
+        runOnce("abc", context);
+
         // 回收RunOnce对context的引用
         context.triggerDestroy();
 
@@ -24,7 +30,7 @@ public class Main {
         runOnce("abc", context);
         runOnce("bcd", context);
 
-        // 重新开始
+        // 如果不重新创建context，那么要reset一下才能重新开始
         context.reset();
         System.out.println("====reset context====");
 
@@ -87,6 +93,7 @@ public class Main {
         }
 
         public void reset() {
+            mBinder.notifyDestroy();
             mIsDestroy = false;
         }
     }
