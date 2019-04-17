@@ -33,6 +33,20 @@ public class Main {
         runOnce("bcd", context);
         runOnce("abc", context);
         runOnce("bcd", context);
+
+        // LifeCycle演示
+        testLifeCycle();
+    }
+
+    private static void testLifeCycle() {
+        // 演示如何结合LifeCycle使用RunOnce
+        LifeCycle lifeCycle = new LifeCycle();
+        RunOnce.from(LifeCycleWrapper.wrap(lifeCycle)).run("lifecycle", new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("lifecycle running");
+            }
+        });
     }
 
     /*
@@ -77,5 +91,59 @@ public class Main {
         }
     }
 
+    private static class LifeCycleWrapper implements RunOnce.ContextProvider {
+
+        private LifeCycle mLifeCycle;
+
+        private RunOnce.Context mRunOnceContext;
+
+        private RunOnce.Binder mBinder;
+
+        private boolean mIsDestroy;
+
+        public static LifeCycleWrapper wrap(LifeCycle cycle) {
+            return new LifeCycleWrapper(cycle);
+        }
+
+        private LifeCycleWrapper(LifeCycle cycle) {
+            mLifeCycle = cycle;
+
+            mBinder = new RunOnce.DefaultBinder();
+
+            mLifeCycle.addObserver(new LifeCycle.LifeCycleObserver() {
+                @Override
+                public void onDestroy(LifeCycle cycle) {
+                    mBinder.notifyDestroy();
+                    mIsDestroy = true;
+                }
+            });
+            mRunOnceContext = new RunOnce.Context() {
+                @Override
+                public RunOnce.Binder getRunOnceBinder() {
+                    return mBinder;
+                }
+
+                @Override
+                public boolean isRunOnceContextDestroy() {
+                    return mIsDestroy;
+                }
+            };
+        }
+
+        /**
+         * 返回同一个lifecycle对象，使RunOnce返回同一个RunOnce对象。
+         *
+         * @return
+         */
+        @Override
+        public Object provideKey() {
+            return mLifeCycle;
+        }
+
+        @Override
+        public RunOnce.Context provideContext() {
+            return mRunOnceContext;
+        }
+    }
 }
 ```
