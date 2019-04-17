@@ -158,7 +158,7 @@ public class RunOnce {
         }
 
         @Override
-        public void onDestroy() {
+        protected void onDestroy() {
             mHasRunMap.clear();
         }
     }
