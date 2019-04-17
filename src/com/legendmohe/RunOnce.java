@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RunOnce {
 
-    private static Map<Context, RunOnce> gContextMap = new ConcurrentHashMap<>();
+    private static Map<Object, RunOnce> gContextMap = new ConcurrentHashMap<>();
 
     /**
      * 绑定当前context
@@ -22,11 +22,37 @@ public class RunOnce {
         if (context == null) {
             throw new NullPointerException("context cannot be null");
         }
+        return from(new ContextProvider() {
+            @Override
+            public Object provideKey() {
+                return context;
+            }
+
+            @Override
+            public Context provideContext() {
+                return context;
+            }
+        });
+    }
+
+    /**
+     * 绑定当前context
+     *
+     * @param provider
+     * @return
+     */
+    public synchronized static RunOnce from(ContextProvider provider) {
+        if (provider == null) {
+            throw new NullPointerException("provider cannot be null");
+        }
+        Context context = provider.provideContext();
+        Object key = provider.provideKey();
+
         // 如果已经Destroy了，就不绑定，直接返回空实现
         if (context.isRunOnceContextDestroy()) {
             return EMPTY_RUN_ONCE;
         }
-        RunOnce runOnce = gContextMap.get(context);
+        RunOnce runOnce = gContextMap.get(key);
         if (runOnce == null) {
             // 注册destroy监听
             final Binder runOnceBinder = context.getRunOnceBinder();
@@ -34,13 +60,13 @@ public class RunOnce {
                 @Override
                 public void onDestroy() {
                     //destroy时清理资源，避免泄漏
-                    gContextMap.remove(context);
+                    gContextMap.remove(key);
                     runOnceBinder.mListener = null;
                     runOnceBinder.onDestroy();
                 }
             });
             runOnce = new RunOnce(runOnceBinder);
-            gContextMap.put(context, runOnce);
+            gContextMap.put(key, runOnce);
         }
         return runOnce;
     }
@@ -157,5 +183,14 @@ public class RunOnce {
          * @return
          */
         boolean isRunOnceContextDestroy();
+    }
+
+    /**
+     * context工厂，主要用于控制context个数
+     */
+    public interface ContextProvider {
+        Object provideKey();
+
+        Context provideContext();
     }
 }
