@@ -35,7 +35,8 @@ public class RunOnce {
                 public void onDestroy() {
                     //destroy时清理资源，避免泄漏
                     gContextMap.remove(context);
-                    runOnceBinder.setListener(null);
+                    runOnceBinder.mListener = null;
+                    runOnceBinder.onDestroy();
                 }
             });
             runOnce = new RunOnce(runOnceBinder);
@@ -56,8 +57,6 @@ public class RunOnce {
 
     //////////////////////////////////////////////////////////////////////
 
-    private Map<String, Boolean> mHasRunMap = new ConcurrentHashMap<>();
-
     // Keep reference
     private Binder mRunOnceBinder;
 
@@ -72,8 +71,7 @@ public class RunOnce {
      * @param runOnce
      */
     void run(String tag, Runnable runOnce) {
-        if (!mHasRunMap.containsKey(tag)) {
-            mHasRunMap.put(tag, true);
+        if (!mRunOnceBinder.checkHasRun(tag)) {
             if (runOnce != null) {
                 runOnce.run();
             }
@@ -83,9 +81,10 @@ public class RunOnce {
     //////////////////////////////////////////////////////////////////////
 
     /**
-     * 实现生命周期绑定。外部要调用notifyDestroy来触发清理逻辑
+     * 实现生命周期绑定和判定是否执行过的逻辑
+     * 外部要调用notifyDestroy来触发清理逻辑
      */
-    public static class Binder {
+    public static abstract class Binder {
 
         private Binder.Listener mListener;
 
@@ -99,8 +98,42 @@ public class RunOnce {
             }
         }
 
+        /**
+         * 清理自身资源
+         */
+        protected abstract void onDestroy();
+
+        /**
+         * 判断一个tag是否执行过
+         *
+         * @param tag
+         * @return
+         */
+        protected abstract boolean checkHasRun(String tag);
+
         private interface Listener {
             void onDestroy();
+        }
+    }
+
+    /**
+     * 实现destroy前只执行一次逻辑
+     */
+    public static class DefaultBinder extends Binder {
+        private Map<String, Boolean> mHasRunMap = new ConcurrentHashMap<>();
+
+        @Override
+        protected boolean checkHasRun(String tag) {
+            if (mHasRunMap.containsKey(tag)) {
+                return true;
+            }
+            mHasRunMap.put(tag, true);
+            return false;
+        }
+
+        @Override
+        public void onDestroy() {
+            mHasRunMap.clear();
         }
     }
 
