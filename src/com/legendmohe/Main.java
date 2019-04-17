@@ -125,6 +125,11 @@ public class Main {
             };
         }
 
+        /**
+         * 返回同一个lifecycle对象，使RunOnce返回同一个RunOnce对象。
+         *
+         * @return
+         */
         @Override
         public Object provideKey() {
             return mLifeCycle;
